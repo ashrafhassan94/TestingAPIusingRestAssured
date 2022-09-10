@@ -1,0 +1,92 @@
+import org.json.simple.JSONObject;
+import org.testng.annotations.Test;
+import static io.restassured.RestAssured.*;
+import io.restassured.http.ContentType;
+
+
+public class AuthRequest 
+
+{
+	@SuppressWarnings("unchecked")
+	@Test 
+	public void AuthRequestwithValidCreds()
+	{
+		
+		baseURI = "https://pay.foodics.dev";
+		JSONObject ValidCreds = new JSONObject();
+		ValidCreds.put("password" , "sk190517225LM@$*");
+		ValidCreds.put("username" , "omarfoodics2+test2@gmail.com");
+
+		given().header("Content-Type", "application/json")
+			.contentType(ContentType.JSON)
+		.accept(ContentType.JSON)
+			.body(ValidCreds.toJSONString())
+		.when()
+			.post("/public-api/v1/App/Login")
+		.then().statusCode(200);
+		
+	}
+	
+	
+	@SuppressWarnings("unchecked")
+	@Test
+	public void AuthRequestwithInValidCreds()
+	{
+		baseURI = "https://pay.foodics.dev";
+		JSONObject InValidPass = new JSONObject();
+		InValidPass.put("uername" , "omarfoodics2+test2@gmail.com");
+		InValidPass.put("password" , "12345678");
+		
+		given().header("Content-Type", "application/json")
+			.contentType(ContentType.JSON)
+		.accept(ContentType.JSON)
+			.body(InValidPass.toJSONString())
+		.when()
+			.post("/public-api/v1/App/Login")
+		.then().statusCode(400);
+		
+	}
+
+	// Happy scenario For get merchant-info using token from registration
+	@SuppressWarnings("unchecked")
+	@Test 
+	public void GetMerchantData()
+	{
+		baseURI = "https://pay.foodics.dev";
+
+		
+
+		JSONObject ValidCreds = new JSONObject();
+		ValidCreds.put("password" , "sk190517225LM@$*");
+		ValidCreds.put("username" , "omarfoodics2+test2@gmail.com");
+
+		String Token = 
+		given().header("Content-Type", "application/json")
+			.contentType(ContentType.JSON)
+		.accept(ContentType.JSON).log().all()
+			.body(ValidCreds.toJSONString())
+		.when()
+			.post("/public-api/v1/App/Login").then().extract()
+		.path("token").toString();
+		
+		
+		given().header("Content-Type", "application/json").
+        	header("Authorization", Token).
+		get("/public-api/v1/App/GetMerchantInfo").then().statusCode(200);
+		
+	}
+
+	// get merchant-info using expired token 
+		@Test 
+		public void GetMerchantDatawithoutToken()
+		{
+			baseURI = "https://pay.foodics.dev";
+			// following Token should expire in BY 30-08-2022 1 AM.  
+			String ExpiredToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2MzQ3OTBiZC1mMWU0LTQxNmMtYTcyMC1mNGQwZDhkOGVjZTUiLCJnaXZlbl9uYW1lIjoiY3VjZWUiLCJlbWFpbCI6Inp5bG1rdGVzdDY2N0BtYWlsLmNvbSIsInJvbGUiOiJNZXJjaGFudCIsIm1lcmNoYW50X2lkIjoiNzEyfDcxMSIsInNlc3Npb25faWQiOiIzZGI2ZjNjYi1jNGQ3LTRhOTQtOGY0NC02NGI4NjY4NTYwYWYiLCJqdGkiOiI2MjE2NWFiOS1lNDAzLTRlNmQtYjgzOS0wY2RmNGUxZGQyYTQiLCJleHAiOjE2NjE4MTM4NjcsImlzcyI6Imh0dHBzOi8vcGF5LmZvb2RpY3MuZGV2LyIsImF1ZCI6Imh0dHBzOi8vcGF5LmZvb2RpY3MuZGV2LyJ9.JCuD-hO2Qhf3PiH_8_REoW1dO3pijTBcZBk0gctoAH4";
+			
+			given().header("Content-Type", "application/json").
+	        	header("Authorization", ExpiredToken).
+			get("/public-api/v1/App/GetMerchantInfo").then().statusCode(401);
+			
+		}
+}
